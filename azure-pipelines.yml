@@ -81,4 +81,26 @@ stages:
         Dockerfile: '**/Dockerfile'
         tags: |
           $(Build.BuildId)
-          latest    
+          latest
+
+- stage: DeployContainer
+  displayName: 'Deploy Container'
+  dependsOn: Build
+  jobs:
+  - job: Deploy
+    displayName: Deploy
+    workspace:
+      clean: all
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: "Build docker image"
+      inputs:
+        containerRegistry: 'Docker Hub'
+        repository: 'matthewthomas/irrigationcontroller'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
