@@ -7,15 +7,15 @@ A .Net Core 3.1 irrigation controller for the RaspberryPi running in Docker
 
 
 # Running on Raspberry Pi
-If you already have docker and docker compose installed and configured on your Pi, then running is a simple one-liner:
-``` sh
+If you already have docker and docker compose installed and configured on your Pi, then running is a one-liner:
+```sh
 docker run -d -p 80:80 --priviliged --restart unless-stopped matthewthomas/irrigationcontroller:latest
 ```
 Once running, point your browser to http://raspberrypi.local to access the irrigation controller interface.
 
 # Installing Docker and Docker Compose on the Raspberry Pi
 If you don't have docker installed on your pi, execute the following script:
-``` sh
+```sh
 sudo apt update
 sudo apt upgrade
 
@@ -38,4 +38,4 @@ Up until very recently, interacting with the GPIO on the Raspberry Pi with .Net 
  (See one of my early attempts [here](https://github.com/matthewethomas/RaspberryPi-NetCore-Blink/tree/master/BlinkGpioWiringPi/)) 
 3. Interacting with the GPIO via the file system, and creating a wrapper to interact with it. (See one of my attempts [here](https://github.com/matthewethomas/RaspberryPi-NetCore-Blink/tree/master/BlinkGpioFS))
 
-.Net Core 3.0 introduced [IOT support](https://github.com/dotnet/iot), giving us [System.Devices.Gpio](https://www.nuget.org/packages/System.Device.Gpio) and [Iot.Device.Bindings](https://www.nuget.org/packages/Iot.Device.Bindings), and allows us to use [Raspbian](https://www.raspberrypi.org/downloads/raspbian/) as our operating system, develop on our Mac, and everything \*should\* be good to go. :smile:
+.Net Core 3.0 introduced cross-platoform [IOT support](https://github.com/dotnet/iot), giving us [System.Devices.Gpio](https://www.nuget.org/packages/System.Device.Gpio) and [Iot.Device.Bindings](https://www.nuget.org/packages/Iot.Device.Bindings). Now, we can develop in .Net Core on our Mac, build and deploy in Azure DevOps, use [Raspbian](https://www.raspberrypi.org/downloads/raspbian/) as our operating system, and everything \*should\* be good to go. :smile:
