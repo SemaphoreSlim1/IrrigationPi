@@ -9,7 +9,7 @@ A .Net Core 3.1 irrigation controller for the RaspberryPi running in Docker
 # Running on Raspberry Pi
 If you already have docker and docker compose installed and configured on your Pi, then running is a one-liner:
 ```sh
-docker run --detach --publish 80:80 --priviliged --restart unless-stopped matthewthomas/irrigationcontroller:latest
+docker run -d -p 80:80 --priviliged --restart unless-stopped matthewthomas/irrigationcontroller:latest
 ```
 Once running, point your browser to http://raspberrypi.local to access the irrigation controller interface.
 
