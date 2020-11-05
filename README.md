@@ -1,20 +1,41 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# Irrigation Pi
+[![Build Status](https://dev.azure.com/matthewethomas/Public%20Projects/_apis/build/status/matthewethomas.IrrigationPi?branchName=master)](https://dev.azure.com/matthewethomas/Public%20Projects/_build/latest?definitionId=16&branchName=master)
+![Code Coverage](https://img.shields.io/azure-devops/coverage/matthewethomas/Public%20Projects/16)
+![License](https://img.shields.io/github/license/matthewethomas/IrrigationPi)
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+A .Net Core 3.1 irrigation controller for the RaspberryPi running in Docker
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+# Running on Raspberry Pi
+If you already have docker and docker compose installed and configured on your Pi, then running is a simple one-liner:
+``` sh
+docker run -d -p 80:80 --priviliged --restart unless-stopped matthewthomas/irrigationcontroller:latest
+```
+Once running, point your browser to http://raspberrypi.local to access the irrigation controller interface.
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+# Installing Docker and Docker Compose on the Raspberry Pi
+If you don't have docker installed on your pi, execute the following script:
+``` sh
+sudo apt update
+sudo apt upgrade
+
+curl -sSL https://get.docker.com | sh
+sudo usermod -aG docker pi
+
+sudo apt-get install -y libffi-dev libssl-dev
+sudo apt-get install -y python3 python3-pip
+sudo pip3 -v install docker-compose
+
+logout
+```
+Credit to [Raspberry Pi Blog](https://www.raspberrypi.org/blog/docker-comes-to-raspberry-pi/) and [Rohan Sawant](https://dev.to/rohansawant/installing-docker-and-docker-compose-on-the-raspberry-pi-in-5-simple-steps-3mgl)
+
+
+# A little background
+Up until very recently, interacting with the GPIO on the Raspberry Pi with .Net meant 1 of 3 things:
+1. Installing Windows 10 IOT on your Pi, and developing a UWP app and using [Windows.Devices.Gpio](https://docs.microsoft.com/en-us/uwp/api/windows.devices.gpio) :nauseated_face:
+2. Interacting with the GPIO by compiling source to the WiringPi library and then creating a managed wrapper
+ (See one of my early attempts [here](https://github.com/matthewethomas/RaspberryPi-NetCore-Blink/tree/master/BlinkGpioWiringPi/)) 
+3. Interacting with the GPIO via the file system, and creating a wrapper to interact with it. (See one of my attempts [here](https://github.com/matthewethomas/RaspberryPi-NetCore-Blink/tree/master/BlinkGpioFS))
+
+.Net Core 3.0 introduced [IOT support](https://github.com/dotnet/iot), giving us [System.Devices.Gpio](https://www.nuget.org/packages/System.Device.Gpio) and [Iot.Device.Bindings](https://www.nuget.org/packages/Iot.Device.Bindings), and allows us to use [Raspbian](https://www.raspberrypi.org/downloads/raspbian/) as our operating system, develop on our Mac, and everything \*should\* be good to go. :smile:
