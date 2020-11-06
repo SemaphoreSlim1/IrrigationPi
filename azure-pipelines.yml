@@ -132,7 +132,7 @@ stages:
               containerRegistry: 'Docker Hub'
               repository: 'matthewthomas/irrigationcontroller'
               command: 'buildAndPush'
-              Dockerfile: '$(Pipeline.Workspace)/app/**/Dockerfile'
+              Dockerfile: '$(Pipeline.Workspace)/app/Dockerfile'
               tags: |
                 $(Build.BuildId)
                 latest
