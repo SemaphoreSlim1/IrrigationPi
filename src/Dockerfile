@@ -4,7 +4,7 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS publish
 WORKDIR /src
-COPY ../src .
+COPY . .
 RUN dotnet publish "IrrigationApi/IrrigationApi.csproj" --configuration Release --output /publish --runtime linux-arm --self-contained
 
 FROM base AS final
