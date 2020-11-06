@@ -5,6 +5,7 @@ using IrrigationApi.Backround;
 using IrrigationApi.Model;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -88,6 +89,11 @@ namespace IrrigationApi
                 endpoints.MapDefaultControllerRoute();
 
             });
+
+            //redirect the root to swagger
+            var rewriteOption = new RewriteOptions();
+            rewriteOption.AddRedirect("^$", "swagger");
+            app.UseRewriter(rewriteOption);
 
             app.UseSwaggerUI(c =>
             {
