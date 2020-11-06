@@ -95,12 +95,10 @@ stages:
         Contents: '**'
         TargetFolder: '$(Build.StagingDirectory)'
         CleanTargetFolder: true
-        
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.StagingDirectory)'
-        artifact: 'app'
-        publishLocation: 'pipeline'
+    
+    # Publish the app as an artifact
+    - publish: $(Build.StagingDirectory)
+      artifact: app
 
 - stage: DeployToDockerHub
   displayName: 'Deploy'
@@ -116,12 +114,10 @@ stages:
     strategy:
       runOnce:
         deploy:
-          steps:
-          - task: DownloadPipelineArtifact@2
-            inputs:
-              buildType: 'current'
-              artifactName: 'app'
-              targetPath: '$(Pipeline.Workspace)'
+          steps:               
+          # Download the published application artifact
+          - download: current
+            artifact: app
               
           - task: PowerShell@2
             inputs:
@@ -136,7 +132,7 @@ stages:
               containerRegistry: 'Docker Hub'
               repository: 'matthewthomas/irrigationcontroller'
               command: 'buildAndPush'
-              Dockerfile: '$(Pipeline.Workspace)/**/Dockerfile'
+              Dockerfile: '$(Pipeline.Workspace)/app/**/Dockerfile'
               tags: |
                 $(Build.BuildId)
                 latest
