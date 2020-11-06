@@ -91,7 +91,7 @@ stages:
     #If the docker file builds, then get it ready to go as an artifact            
     - task: CopyFiles@2
       inputs:
-        SourceFolder: '$(Build.SourcesDirectory)'
+        SourceFolder: '$(Build.SourcesDirectory)/src'
         Contents: '**'
         TargetFolder: '$(Build.StagingDirectory)'
         CleanTargetFolder: true
@@ -123,7 +123,7 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                  cd $(Pipeline.Workspace)/app/src
+                  cd $(Pipeline.Workspace)/app
                   ls
 
           - task: Docker@2
