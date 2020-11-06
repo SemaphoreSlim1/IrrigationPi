@@ -88,8 +88,22 @@ stages:
           $(Build.BuildId)
           latest
 
-- stage: DeployContainer
-  displayName: 'Deploy Container'
+    #If the docker file builds, then get it ready to go as an artifact            
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: '**'
+        TargetFolder: '$(Build.StagingDirectory)'
+        CleanTargetFolder: true
+        
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.StagingDirectory)'
+        artifact: 'app'
+        publishLocation: 'pipeline'
+
+- stage: DeployToDockerHub
+  displayName: 'Deploy'
   dependsOn: Build
   jobs:
   - deployment: DeployToDockerHub
@@ -103,6 +117,12 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              buildType: 'current'
+              artifactName: 'app'
+              targetPath: '$(Pipeline.Workspace)'
+
           - task: Docker@2
             displayName: "Build docker image"
             inputs:
