@@ -7,8 +7,7 @@ trigger:
   paths:
     exclude:
       - README.md
-      - docs/*
-      - CI/*
+      - docs/*      
 
 resources:
 - repo: self
