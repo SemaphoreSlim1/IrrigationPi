@@ -1,9 +1,14 @@
-# Docker
-# Build a Docker image 
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
 trigger:
-- master
+  batch: true
+  branches:
+    include:
+      - master
+      - release/*
+  paths:
+    exclude:
+      - README.md
+      - docs/*
+      - CI/*
 
 resources:
 - repo: self
@@ -49,7 +54,7 @@ stages:
         command: 'test'
         arguments: '--configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
         projects: '**/*UnitTest*.csproj'
-    
+
     - task: reportGenerator@4
       displayName: 'Genrate Coverage report'
       inputs:
@@ -57,7 +62,7 @@ stages:
         targetdir: '$(Build.SourcesDirectory)/CodeCoverage'
         reporttypes: 'HtmlInline_AzurePipelines;Cobertura;Badges'
         assemblyfilters: '-xunit*'
-    
+
     - task: PublishCodeCoverageResults@1
       displayName: 'Publish code coverage report'
       inputs:
@@ -87,20 +92,24 @@ stages:
   displayName: 'Deploy Container'
   dependsOn: Build
   jobs:
-  - job: Deploy
-    displayName: Deploy
+  - deployment: DeployToDockerHub
+    displayName: 'Deploy To Docker Hub'
     workspace:
       clean: all
     pool:
       vmImage: 'ubuntu-latest'
-    steps:
-    - task: Docker@2
-      displayName: "Build docker image"
-      inputs:
-        containerRegistry: 'Docker Hub'
-        repository: 'matthewthomas/irrigationcontroller'
-        command: 'buildAndPush'
-        Dockerfile: '**/Dockerfile'
-        tags: |
-          $(Build.BuildId)
-          latest
+    environment: DockerHub
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Docker@2
+            displayName: "Build docker image"
+            inputs:
+              containerRegistry: 'Docker Hub'
+              repository: 'matthewthomas/irrigationcontroller'
+              command: 'buildAndPush'
+              Dockerfile: '**/Dockerfile'
+              tags: |
+                $(Build.BuildId)
+                latest
