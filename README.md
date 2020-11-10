@@ -7,7 +7,7 @@ A .Net Core 3.1 irrigation controller for the RaspberryPi running in Docker
 
 
 # Running on Raspberry Pi
-If you already have docker and docker compose installed and configured on your Pi, then running is a one-liner:
+If you already have Docker and Docker Compose installed and configured on your Pi, then running is a one-liner:
 ```sh
 docker run -d -p 80:80 --privileged --restart unless-stopped matthewthomas/irrigationcontroller:latest
 ```
@@ -30,6 +30,12 @@ logout
 ```
 Credit to [Raspberry Pi Blog](https://www.raspberrypi.org/blog/docker-comes-to-raspberry-pi/) and [Rohan Sawant](https://dev.to/rohansawant/installing-docker-and-docker-compose-on-the-raspberry-pi-in-5-simple-steps-3mgl)
 
+# Container box
+This is designed to work with a [Raspberry Pi](https://www.adafruit.com/product/4292) and a [SainSmart 8 channel relay module](https://www.amazon.com/SainSmart-101-70-102-8-Channel-Relay-Module/dp/B0057OC5WK/ref=sr_1_4?crid=E51VI6QP5C9L&dchild=1&keywords=sainsmart+relay+board&qid=1604978333&sprefix=sainspart+rel%2Caps%2C240&sr=8-4)
+
+To that end, I've designed a little box and lid which you can 3d print. The design files are located [here](physicals/3dPrints/EnclosureBox/).
+
+<img src="physicals/3dPrints/EnclosureBox/Preview.png" width="250">
 
 # A little background
 Up until very recently, interacting with the GPIO on the Raspberry Pi with .Net meant 1 of 3 things:
