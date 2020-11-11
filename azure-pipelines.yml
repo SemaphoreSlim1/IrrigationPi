@@ -30,7 +30,7 @@ stages:
     - task: UseDotNet@2
       inputs:
         packageType: 'sdk'
-        version: '3.1.x'
+        version: '5.0.x'
 
     - task: DotNetCoreCLI@2
       displayName: 'Ensure Report Generator on unit test projects'
@@ -88,14 +88,14 @@ stages:
           $(Build.BuildId)
           latest
 
-    #If the docker file builds, then get it ready to go as an artifact            
+    #If the docker file builds, then get it ready to go as an artifact
     - task: CopyFiles@2
       inputs:
         SourceFolder: '$(Build.SourcesDirectory)/src'
         Contents: '**'
         TargetFolder: '$(Build.StagingDirectory)'
         CleanTargetFolder: true
-    
+
     # Publish the app as an artifact
     - publish: $(Build.StagingDirectory)
       artifact: app

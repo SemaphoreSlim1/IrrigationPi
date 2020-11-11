@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace IrrigationApi.Model
 {
-    public class IrrigationJob
+    [ExcludeFromCodeCoverage]
+    public record IrrigationJob
     {
-        public int Valve { get; set; }
-        public TimeSpan Duration { get; set; }
+        public int Valve { get; init; }
+        public TimeSpan Duration { get; init; }
     }
 }
