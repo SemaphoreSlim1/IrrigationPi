@@ -19,8 +19,6 @@ RUN dotnet publish IrrigationApi.csproj \
             --configuration Release \
             --output /publish \
             --runtime linux-arm \
-            --self-contained false \
-            --no-restore \
             -p:PublishTrimmed=true \
             -p:TrimMode=Link \
             /p:Version=$VERSION
