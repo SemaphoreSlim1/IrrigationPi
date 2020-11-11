@@ -49,8 +49,7 @@ namespace IrrigationApi.Backround
                 var executedJobs = new List<IrrigationJob>();
 
                 //get the job that triggered this
-                if (_jobReader.TryRead(out var job) == false)
-                { continue; }
+                var job = await _jobReader.ReadAsync(_irrigationCts.Token);
 
                 _logger.LogInformation("Incoming job: {@job}", job);
 

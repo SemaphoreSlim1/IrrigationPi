@@ -11,10 +11,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using System.Device.Gpio;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 
 namespace IrrigationApi
 {
+    [ExcludeFromCodeCoverage] //there's not a real easy way to unit test bootstrapping the application or registering the application services
     public class Startup
     {
         private readonly IConfiguration _configRoot;

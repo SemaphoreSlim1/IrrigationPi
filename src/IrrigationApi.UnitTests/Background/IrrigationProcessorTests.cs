@@ -63,9 +63,10 @@ namespace IrrigationApi.UnitTests.Background
 
             _processor = new IrrigationProcessor(channel.Reader, gpioController, _stopper, irrigationOptionsMock.Object, _loggerMock.Object);
 
+            //before the Microsoft GPIO controller can be used, the pins must be opened and set to the desired input/output state
+            //run our initializer code to make that happen
             var pinInitializer = new PinInitializer(gpioController, irrigationOptionsMock.Object);
             pinInitializer.StartAsync(CancellationToken.None).Wait();
-
         }
 
         [Fact]

@@ -4,16 +4,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace IrrigationApi
 {
+    [ExcludeFromCodeCoverage] //there's not a real easy way to unit test the application's entry point
     public class Program
     {
         public static int Main(string[] args)
         {
-
-
-
             try
             {
                 var hostBuilder = Host.CreateDefaultBuilder(args)
