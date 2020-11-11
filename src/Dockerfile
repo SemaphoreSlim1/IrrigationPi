@@ -15,7 +15,7 @@ COPY IrrigationApi/IrrigationApi.csproj ./
 WORKDIR /IrrigationApi
 RUN dotnet restore
 
-RUN dotnet publish "IrrigationApi/IrrigationApi.csproj" \
+RUN dotnet publish IrrigationApi.csproj \
             --configuration Release \
             --output /publish \
             --runtime linux-arm \
