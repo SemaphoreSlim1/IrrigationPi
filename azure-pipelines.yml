@@ -52,7 +52,7 @@ stages:
       displayName: 'dotnet test'
       inputs:
         command: 'test'
-        arguments: '--configuration Release --settings $(Build.SourcesDirectory)/CodeCoverage.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+        arguments: '--configuration Release --settings $(Build.SourcesDirectory)/src/CodeCoverage.runsettings /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
         projects: '**/*UnitTest*.csproj'
 
     - task: reportGenerator@4
