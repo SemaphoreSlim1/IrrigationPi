@@ -3,7 +3,7 @@
 ![Code Coverage](https://img.shields.io/azure-devops/coverage/matthewethomas/Public%20Projects/16)
 ![License](https://img.shields.io/github/license/matthewethomas/IrrigationPi)
 
-A .Net Core 3.1 irrigation controller for the RaspberryPi running in Docker
+A .Net 5.0 irrigation controller for the RaspberryPi running in Docker
 
 
 # Running on Raspberry Pi
