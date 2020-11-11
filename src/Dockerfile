@@ -1,4 +1,4 @@
-ARG VERSION=1.0.0
+ARG VERSION=1.0.0.0
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0-buster-slim-arm32v7 AS base
 EXPOSE 80
@@ -15,13 +15,7 @@ COPY IrrigationApi/IrrigationApi.csproj ./
 WORKDIR /IrrigationApi
 RUN dotnet restore
 
-RUN dotnet publish IrrigationApi.csproj \
-            --configuration Release \
-            --output /publish \
-            --runtime linux-arm \
-            -p:PublishTrimmed=true \
-            -p:TrimMode=Link \
-            /p:Version=$VERSION
+RUN dotnet publish IrrigationApi.csproj --configuration Release --output /publish --runtime linux-arm -p:PublishTrimmed=true -p:TrimMode=Link /p:Version=$VERSION
 
 FROM base AS final
 WORKDIR /app
