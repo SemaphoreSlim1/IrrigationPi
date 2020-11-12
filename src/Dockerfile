@@ -7,7 +7,7 @@ EXPOSE 80
 #to create distinct layers
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS publish
 WORKDIR /IrrigationApi
-COPY IrrigationApi/IrrigationApi.csproj ./
+COPY IrrigationApi/IrrigationApi.csproj .
 
 #as we add additional projects to our main project,
 #change the working directory as appropriate and copy in the csproj file
@@ -18,7 +18,7 @@ RUN dotnet restore --runtime linux-arm
 
 #then copy in the source for each project
 WORKDIR /
-COPY IrrigationApi/ IrrigationApi/
+COPY IrrigationApi IrrigationApi
 
 #now publish the project
 WORKDIR /IrrigationApi
