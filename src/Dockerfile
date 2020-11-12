@@ -13,9 +13,9 @@ COPY IrrigationApi/IrrigationApi.csproj ./
 #change the working directory as appropriate and copy in the csproj file
 
 WORKDIR /IrrigationApi
-RUN dotnet restore
+RUN dotnet restore --runtime linux-arm
 
-RUN dotnet publish IrrigationApi.csproj --configuration Release --output /publish --runtime linux-arm -p:PublishTrimmed=true -p:TrimMode=Link
+RUN dotnet publish IrrigationApi.csproj --configuration Release --output /publish --runtime linux-arm --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
 
 FROM base AS final
 WORKDIR /app
