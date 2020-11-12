@@ -12,10 +12,16 @@ COPY IrrigationApi/IrrigationApi.csproj ./
 #as we add additional projects to our main project,
 #change the working directory as appropriate and copy in the csproj file
 
+#then restore each project, again creating distinct layers
 WORKDIR /IrrigationApi
 RUN dotnet restore --runtime linux-arm
 
-RUN dotnet publish IrrigationApi.csproj --configuration Release --output /publish --runtime linux-arm --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
+#then copy in the source for each project
+WORKDIR /
+COPY IrrigationApi/ IrrigationApi/
+
+
+RUN dotnet publish IrrigationApi/IrrigationApi.csproj --configuration Release --output /publish --runtime linux-arm --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
 
 FROM base AS final
 WORKDIR /app
