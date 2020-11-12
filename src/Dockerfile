@@ -28,4 +28,4 @@ FROM base AS final
 WORKDIR /
 COPY --from=publish /IrrigationApi/bin/Release/net5.0/linux-arm/publish .
 
-ENTRYPOINT [ "dotnet", "--version"]
+ENTRYPOINT [ "/bin/bash"]
