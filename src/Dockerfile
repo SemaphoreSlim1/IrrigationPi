@@ -5,7 +5,7 @@ EXPOSE 80
 
 #copy csproj files to their respective locations
 #to create distinct layers
-FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim-arm32v7 AS publish
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS publish
 WORKDIR /IrrigationApi
 COPY IrrigationApi/IrrigationApi.csproj ./
 
