@@ -21,7 +21,7 @@ WORKDIR /
 COPY IrrigationApi/ IrrigationApi/
 
 
-RUN dotnet publish IrrigationApi/IrrigationApi.csproj --configuration Release --output /publish --runtime linux-arm --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
+RUN dotnet publish /IrrigationApi/IrrigationApi.csproj --configuration Release --output /publish --runtime linux-arm --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
 
 FROM base AS final
 WORKDIR /app
