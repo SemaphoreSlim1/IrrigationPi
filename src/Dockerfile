@@ -22,10 +22,10 @@ COPY IrrigationApi/ IrrigationApi/
 
 #now publish the project
 WORKDIR /IrrigationApi
-RUN dotnet publish IrrigationApi.csproj --configuration Release --output /publish --runtime linux-arm --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
+RUN dotnet publish IrrigationApi.csproj --configuration Release --runtime linux-arm --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
 
 FROM base AS final
 WORKDIR /
-COPY --from=publish /publish .
+COPY --from=publish /IrrigationApi/bin/Release/linux-arm/ .
 
 ENTRYPOINT [ "dotnet", "IrrigationApi.dll"]
