@@ -26,6 +26,6 @@ RUN dotnet publish IrrigationApi.csproj --configuration Release --runtime linux-
 
 FROM base AS final
 WORKDIR /
-COPY --from=publish /IrrigationApi/bin/Release/linux-arm/ .
+COPY --from=publish /IrrigationApi/bin/Release/linux-arm .
 
 ENTRYPOINT [ "dotnet", "IrrigationApi.dll"]
