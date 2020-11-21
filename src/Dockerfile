@@ -29,3 +29,5 @@ WORKDIR /app
 COPY --from=publish /publish .
 
 ENTRYPOINT ["./IrrigationApi"]
+
+HEALTHCHECK --interval=5s --timeout=10s --retries=3 CMD curl --fail http://localhost:80/Health || exit 1

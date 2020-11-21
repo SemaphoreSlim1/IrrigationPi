@@ -14,6 +14,11 @@ using System.Threading.Tasks;
 
 namespace IrrigationApi.Backround
 {
+    public class IrrigationProcessorStatus
+    {
+        public bool Running { get; set; }
+    }
+
     public class IrrigationProcessor : BackgroundService
     {
         private readonly ChannelReader<IrrigationJob> _jobReader;
@@ -23,10 +28,12 @@ namespace IrrigationApi.Backround
         private readonly ILogger _logger;
 
         private CancellationTokenSource _irrigationCts;
+        private readonly IrrigationProcessorStatus _status;
 
         public IrrigationProcessor(ChannelReader<IrrigationJob> jobReader,
                                     GpioController gpioController,
                                     IIrrigationStopper irrigationStopper,
+                                    IrrigationProcessorStatus status,
                                     IOptions<IrrigationConfig> config,
                                     ILogger<IrrigationProcessor> logger)
         {
@@ -35,6 +42,7 @@ namespace IrrigationApi.Backround
             _irrigationStopper = irrigationStopper;
             _config = config.Value;
             _logger = logger;
+            _status = status;
 
             _irrigationStopper.StopRequested += StopIrrigation;
         }
@@ -42,6 +50,8 @@ namespace IrrigationApi.Backround
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _status.Running = true;
+
             while (await _jobReader.WaitToReadAsync(stoppingToken))
             {
                 _irrigationCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
@@ -106,6 +116,8 @@ namespace IrrigationApi.Backround
                 _logger.LogInformation("Pressure bled");
                 _logger.LogInformation("Irrigation complete");
             }
+
+            _status.Running = false;
         }
 
         private async Task Irrigate(IrrigationJob job, CancellationToken cancellationToken)
