@@ -16,27 +16,26 @@ using Xunit;
 
 namespace IrrigationApi.UnitTests.Background
 {
-    public class IrrigationProcessorTests
+    public class IrrigationProcessorTests : IDisposable
     {
-        private readonly ChannelWriter<IrrigationJob> _jobWriter;
+        private readonly Channel<IrrigationJob> _channel;
         private readonly MemoryGpioDriver _gpioDriver;
         private readonly IrrigationStopper _stopper;
         private readonly IrrigationConfig _config;
 
+        private readonly IrrigationProcessorStatus _status;
         private readonly Mock<ILogger<IrrigationProcessor>> _loggerMock;
         private readonly IrrigationProcessor _processor;
 
         public IrrigationProcessorTests()
         {
-            var channel = Channel.CreateUnbounded<IrrigationJob>(
+            _channel = Channel.CreateUnbounded<IrrigationJob>(
                 new UnboundedChannelOptions()
                 {
                     AllowSynchronousContinuations = false,
                     SingleWriter = true,
                     SingleReader = true
                 });
-
-            _jobWriter = channel.Writer;
 
             _gpioDriver = new MemoryGpioDriver(pinCount: 50);
 
@@ -59,9 +58,9 @@ namespace IrrigationApi.UnitTests.Background
             irrigationOptionsMock.SetupGet(x => x.Value).Returns(_config);
 
             _loggerMock = new Mock<ILogger<IrrigationProcessor>>();
+            _status = new IrrigationProcessorStatus();
 
-
-            _processor = new IrrigationProcessor(channel.Reader, gpioController, _stopper, irrigationOptionsMock.Object, _loggerMock.Object);
+            _processor = new IrrigationProcessor(_channel.Reader, gpioController, _stopper, _status, irrigationOptionsMock.Object, _loggerMock.Object);
 
             //before the Microsoft GPIO controller can be used, the pins must be opened and set to the desired input/output state
             //run our initializer code to make that happen
@@ -75,23 +74,94 @@ namespace IrrigationApi.UnitTests.Background
             //create a ridiculously long job for purposes of this unit test
             var job = new IrrigationJob { Duration = TimeSpan.FromMinutes(5), Valve = 1 };
 
-            //queue it for execution 2x, so that way when we cancel mid run on the first one, we can verify the second didn't execute
-            await _jobWriter.WriteAsync(job);
-            await _jobWriter.WriteAsync(job);
-
+            //queue it for execution
+            await _channel.Writer.WriteAsync(job);
             await _processor.StartAsync(CancellationToken.None);
 
             //give it a little bit to kick off
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
             _stopper.RequestStop();
 
             //give it a few seconds to wrap up
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
             Assert.Equal(PinValue.High, _gpioDriver.Pins[1].Value); //master control valve should be off
             Assert.Equal(PinValue.High, _gpioDriver.Pins[2].Value); //irrigation valve should be off
+        }
 
+        [Fact]
+        public async Task CancellingViaCancellationToken_TerminatesEarly()
+        {
+            var cts = new CancellationTokenSource();
+
+            //create a ridiculously long job for purposes of this unit test
+            var job = new IrrigationJob { Duration = TimeSpan.FromMinutes(5), Valve = 1 };
+
+            //queue it for execution
+            await _channel.Writer.WriteAsync(job);
+            await _processor.StartAsync(cts.Token);
+
+            //give it a little bit to kick off
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            //now stop it
+            cts.Cancel();
+
+            //give it a few seconds to wrap up
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            Assert.Equal(PinValue.High, _gpioDriver.Pins[1].Value); //master control valve should be off
+            Assert.Equal(PinValue.High, _gpioDriver.Pins[2].Value); //irrigation valve should be off
+        }
+
+        [Fact]
+        public async Task IrrigationJob_Irrigates()
+        {
+            var job = new IrrigationJob { Duration = TimeSpan.FromSeconds(3), Valve = 1 };
+
+            //queue it for execution
+            await _channel.Writer.WriteAsync(job);
+            await _processor.StartAsync(CancellationToken.None);
+
+            //give it a little bit to kick off
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            Assert.Equal(PinValue.Low, _gpioDriver.Pins[1].Value); //master control valve should be on
+            Assert.Equal(PinValue.Low, _gpioDriver.Pins[2].Value); //irrigation valve should be on
+
+            //give it a few seconds to wrap up
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            Assert.Equal(PinValue.High, _gpioDriver.Pins[1].Value); //master control valve should be off
+            Assert.Equal(PinValue.High, _gpioDriver.Pins[2].Value); //irrigation valve should be off
+        }
+
+        [Fact]
+        public async Task Processor_ReportsStarted_When_Started()
+        {
+            await _processor.StartAsync(CancellationToken.None);
+
+            Assert.True(_status.Running);
+        }
+
+        [Fact]
+        public async Task Processor_ReportsNotRunning_WhenStopped()
+        {
+            await _processor.StartAsync(CancellationToken.None);
+            _channel.Writer.Complete();
+
+            //give a bit to complete
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            Assert.False(_status.Running);
+        }
+
+        public void Dispose()
+        {
+            //force the processor to come to completion so the test does not run unnecessarily long
+            _channel.Writer.TryComplete();
+            _processor.StopAsync(CancellationToken.None).Wait();
         }
     }
 }

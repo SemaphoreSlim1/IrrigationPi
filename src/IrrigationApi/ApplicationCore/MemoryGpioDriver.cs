@@ -1,12 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Device.Gpio;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace IrrigationApi.ApplicationCore
 {
-
+    //excluding because this is to facilitate local testing/execution and unit tests. 
+    //This class does not execute in a production environment
+    [ExcludeFromCodeCoverage]
     public class MemoryGpioDriver : GpioDriver
     {
         public class PinData

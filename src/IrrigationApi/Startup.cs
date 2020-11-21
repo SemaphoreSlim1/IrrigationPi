@@ -1,13 +1,17 @@
 using IrrigationApi.ApplicationCore;
 using IrrigationApi.ApplicationCore.Configuration;
+using IrrigationApi.ApplicationCore.Health;
 using IrrigationApi.ApplicationCore.Threading;
 using IrrigationApi.Backround;
 using IrrigationApi.Model;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using System.Device.Gpio;
@@ -41,9 +45,8 @@ namespace IrrigationApi
                     SingleReader = true
                 });
 
-
             services.AddSingleton(channel);
-            services.AddSingleton(sp =>
+            services.AddTransient(sp =>
             {
                 var resolvedChannel = sp.GetRequiredService<Channel<IrrigationJob>>();
                 return channel.Reader;
@@ -66,6 +69,7 @@ namespace IrrigationApi
             services.AddHostedService<IrrigationProcessor>();
 
             services.AddSingleton<IIrrigationStopper, IrrigationStopper>();
+            services.AddSingleton<IrrigationProcessorStatus>();
 
             services.AddControllers().AddNewtonsoftJson();
 
@@ -73,6 +77,10 @@ namespace IrrigationApi
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Irrigation API", Version = "v1" });
             });
+
+            services.AddHealthChecks()
+            .AddCheck<ApplicationHealthCheck>("Application", tags: new[] { "application" })
+            .AddCheck<IrrigationProcessorHealthCheck>("Irrigation", tags: new[] { "irrigation" });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -87,9 +95,33 @@ namespace IrrigationApi
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapSwagger();
                 endpoints.MapDefaultControllerRoute();
+                endpoints.MapSwagger();
 
+                endpoints.MapHealthChecks("/Heartbeat", new HealthCheckOptions()
+                {
+                    Predicate = (check) =>
+                    {
+                        return check.Name == "Application";
+                    },
+                    ResultStatusCodes =
+                    {
+                        [HealthStatus.Healthy] = StatusCodes.Status200OK,
+                        [HealthStatus.Degraded] = StatusCodes.Status200OK,
+                        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+                    }
+                });
+
+                //This route executes all registered health checks - it MAY reach out to downstream systems
+                endpoints.MapHealthChecks("/Health", new HealthCheckOptions()
+                {
+                    ResultStatusCodes =
+                    {
+                        [HealthStatus.Healthy] = StatusCodes.Status200OK,
+                        [HealthStatus.Degraded] = StatusCodes.Status200OK,
+                        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+                    }
+                });
             });
 
             //redirect the root to swagger
