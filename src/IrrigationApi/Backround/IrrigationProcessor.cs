@@ -44,6 +44,7 @@ namespace IrrigationApi.Backround
             _logger = logger;
             _status = status;
 
+            _irrigationCts = new CancellationTokenSource();
             _irrigationStopper.StopRequested += StopIrrigation;
         }
 
@@ -126,7 +127,8 @@ namespace IrrigationApi.Backround
 
             _gpioController.Write(valvePin, PinValue.Low);
 
-            try { await Task.Delay(job.Duration, cancellationToken); }
+            try
+            { await Task.Delay(job.Duration, cancellationToken); }
             catch { }
 
             _gpioController.Write(valvePin, PinValue.High);
@@ -134,7 +136,7 @@ namespace IrrigationApi.Backround
 
         private void StopIrrigation(object sender, EventArgs e)
         {
-            _irrigationCts?.Cancel();
+            _irrigationCts.Cancel();
         }
 
     }
