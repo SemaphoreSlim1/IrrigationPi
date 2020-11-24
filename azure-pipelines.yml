@@ -34,6 +34,7 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Ensure Report Generator on unit test projects'
+      condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         command: 'custom'
         projects: '**/*UnitTest*.csproj'
@@ -42,6 +43,7 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Ensure coverlet.msbuild on unit test projects'
+      condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         command: 'custom'
         projects: '**/*UnitTest*.csproj'
@@ -57,6 +59,7 @@ stages:
 
     - task: reportGenerator@4
       displayName: 'Genrate Coverage report'
+      condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         reports: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
         targetdir: '$(Build.SourcesDirectory)/CodeCoverage'
@@ -65,6 +68,7 @@ stages:
 
     - task: PublishCodeCoverageResults@1
       displayName: 'Publish code coverage report'
+      condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         codeCoverageTool: 'Cobertura'
         summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
