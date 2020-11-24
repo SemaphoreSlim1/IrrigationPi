@@ -90,7 +90,7 @@ stages:
 
   - job: CreateArtifact
     displayName: 'Create Artifact'
-    condition: ne(variables['Build.Reason'], 'PullRequest'
+    condition: ne(variables['Build.Reason'], 'PullRequest')
     dependsOn:
     - UnitTests
     - DockerBuild
@@ -113,7 +113,7 @@ stages:
 
 - stage: DeployToDockerHub
   displayName: 'Deploy'
-  condition: ne(variables['Build.Reason'], 'PullRequest'
+  condition: ne(variables['Build.Reason'], 'PullRequest')
   dependsOn: Build
   jobs:
   - deployment: DeployToDockerHub
