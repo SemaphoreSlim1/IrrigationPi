@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace HealthInvoker
 {
+    [ExcludeFromCodeCoverage]
     public class Program
     {
         public static async Task<int> Main(string[] args)
