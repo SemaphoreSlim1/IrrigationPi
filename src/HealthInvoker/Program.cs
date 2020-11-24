@@ -16,7 +16,7 @@ namespace HealthInvoker
 
                 try
                 {
-                    var response = await cli.GetAsync("");
+                    var response = await cli.GetAsync("Health");
                     return response.IsSuccessStatusCode ? 0 : 1;
                 }
                 catch
