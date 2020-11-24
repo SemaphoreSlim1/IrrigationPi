@@ -58,7 +58,7 @@ stages:
         projects: '**/*UnitTest*.csproj'
 
     - task: reportGenerator@4
-      displayName: 'Genrate Coverage report'
+      displayName: 'Generate Coverage report'
       condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         reports: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
