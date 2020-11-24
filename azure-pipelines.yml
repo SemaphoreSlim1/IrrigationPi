@@ -18,7 +18,7 @@ variables:
 
 stages:
 - stage: Build
-  displayName: Build image
+  displayName: Build
   jobs:
   - job: UnitTests
     displayName: Unit Tests
@@ -34,6 +34,7 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Ensure Report Generator on unit test projects'
+      condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         command: 'custom'
         projects: '**/*UnitTest*.csproj'
@@ -42,6 +43,7 @@ stages:
 
     - task: DotNetCoreCLI@2
       displayName: 'Ensure coverlet.msbuild on unit test projects'
+      condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         command: 'custom'
         projects: '**/*UnitTest*.csproj'
@@ -56,7 +58,8 @@ stages:
         projects: '**/*UnitTest*.csproj'
 
     - task: reportGenerator@4
-      displayName: 'Genrate Coverage report'
+      displayName: 'Generate Coverage report'
+      condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         reports: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
         targetdir: '$(Build.SourcesDirectory)/CodeCoverage'
@@ -65,13 +68,14 @@ stages:
 
     - task: PublishCodeCoverageResults@1
       displayName: 'Publish code coverage report'
+      condition: ne(variables['Build.Reason'], 'PullRequest')
       inputs:
         codeCoverageTool: 'Cobertura'
         summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
         reportDirectory: '$(Build.SourcesDirectory)/TestResults/coverage'
 
-  - job: Build
-    displayName: Build
+  - job: DockerBuild
+    displayName: 'Build Docker Image'
     workspace:
       clean: all
     pool:
@@ -88,20 +92,32 @@ stages:
           $(Build.BuildId)
           latest
 
-    #If the docker file builds, then get it ready to go as an artifact
-    - task: CopyFiles@2
-      inputs:
-        SourceFolder: '$(Build.SourcesDirectory)/src'
-        Contents: '**'
-        TargetFolder: '$(Build.StagingDirectory)'
-        CleanTargetFolder: true
+  - job: CreateArtifact
+    displayName: 'Create Artifact'
+    condition: ne(variables['Build.Reason'], 'PullRequest')
+    dependsOn:
+    - UnitTests
+    - DockerBuild
+    workspace:
+      clean: all
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      #If the docker file builds and the unit tests pass, then get it ready to go as an artifact
+      - task: CopyFiles@2
+        inputs:
+          SourceFolder: '$(Build.SourcesDirectory)/src'
+          Contents: '**'
+          TargetFolder: '$(Build.StagingDirectory)'
+          CleanTargetFolder: true
 
-    # Publish the app as an artifact
-    - publish: $(Build.StagingDirectory)
-      artifact: app
+      # Publish the app as an artifact
+      - publish: $(Build.StagingDirectory)
+        artifact: app
 
 - stage: DeployToDockerHub
   displayName: 'Deploy'
+  condition: ne(variables['Build.Reason'], 'PullRequest')
   dependsOn: Build
   jobs:
   - deployment: DeployToDockerHub
