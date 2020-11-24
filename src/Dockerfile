@@ -22,7 +22,7 @@ RUN dotnet restore --runtime linux-arm
 WORKDIR /source
 COPY HealthInvoker HealthInvoker
 WORKDIR /source/HealthInvoker
-RUN dotnet publish HealthInvoker.csproj --configuration Release --runtime linux-arm --no-restore --ouput /publish/health -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
+RUN dotnet publish HealthInvoker.csproj --configuration Release --runtime linux-arm --no-restore --output /publish/health -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=Link
 
 #copy in the project and restore the dependencies
 WORKDIR /source/IrrigationApi
