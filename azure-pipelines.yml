@@ -18,7 +18,7 @@ variables:
 
 stages:
 - stage: Build
-  displayName: Build image
+  displayName: Build
   jobs:
   - job: UnitTests
     displayName: Unit Tests
@@ -70,8 +70,8 @@ stages:
         summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
         reportDirectory: '$(Build.SourcesDirectory)/TestResults/coverage'
 
-  - job: Build
-    displayName: Build
+  - job: DockerBuild
+    displayName: 'Build Docker Image'
     workspace:
       clean: all
     pool:
@@ -88,17 +88,27 @@ stages:
           $(Build.BuildId)
           latest
 
-    #If the docker file builds, then get it ready to go as an artifact
-    - task: CopyFiles@2
-      inputs:
-        SourceFolder: '$(Build.SourcesDirectory)/src'
-        Contents: '**'
-        TargetFolder: '$(Build.StagingDirectory)'
-        CleanTargetFolder: true
+  - job: CreateArtifact
+    displayName: 'Create Artifact'
+    dependsOn:
+    - UnitTests
+    - DockerBuild
+    workspace:
+      clean: all
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      #If the docker file builds and the unit tests pass, then get it ready to go as an artifact
+      - task: CopyFiles@2
+        inputs:
+          SourceFolder: '$(Build.SourcesDirectory)/src'
+          Contents: '**'
+          TargetFolder: '$(Build.StagingDirectory)'
+          CleanTargetFolder: true
 
-    # Publish the app as an artifact
-    - publish: $(Build.StagingDirectory)
-      artifact: app
+      # Publish the app as an artifact
+      - publish: $(Build.StagingDirectory)
+        artifact: app
 
 - stage: DeployToDockerHub
   displayName: 'Deploy'
