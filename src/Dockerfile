@@ -43,5 +43,5 @@ WORKDIR /app
 COPY --from=publish /publish/app .
 
 WORKDIR /
-HEALTHCHECK --interval=5s --timeout=10s --retries=3 CMD /health/HealthInvoker
-ENTRYPOINT ["/app/IrrigationApi"]
+HEALTHCHECK --interval=5s --timeout=10s --retries=3 CMD ./health/HealthInvoker
+ENTRYPOINT ["./app/IrrigationApi"]
