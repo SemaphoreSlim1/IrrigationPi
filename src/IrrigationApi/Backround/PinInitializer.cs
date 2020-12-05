@@ -1,7 +1,7 @@
 ﻿using IrrigationApi.ApplicationCore.Configuration;
+using IrrigationApi.ApplicationCore.Hardware;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using System.Device.Gpio;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,24 +9,22 @@ namespace IrrigationApi.Backround
 {
     public class PinInitializer : IHostedService
     {
-        private readonly GpioController _gpioController;
+        private readonly RelayBoard _relayBoard;
         private readonly IrrigationConfig _config;
 
-        public PinInitializer(GpioController gpioController, IOptions<IrrigationConfig> config)
+        public PinInitializer(RelayBoard relayBoard, IOptions<IrrigationConfig> config)
         {
-            _gpioController = gpioController;
+            _relayBoard = relayBoard;
             _config = config.Value;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _gpioController.OpenPin(_config.MasterControlValveGpio, PinMode.Output);
-            _gpioController.Write(_config.MasterControlValveGpio, PinValue.High); //start with the mcv off
+            _relayBoard[_config.MasterControlValveGpio].On = false;//start with the mcv off
 
             foreach (var valve in _config.Valves)
             {
-                _gpioController.OpenPin(valve.GpioPin, PinMode.Output);
-                _gpioController.Write(valve.GpioPin, PinValue.High); //start with the valves all off
+                _relayBoard[valve.GpioPin].On = false; //start with the valves all off
             }
 
             return Task.CompletedTask;
@@ -36,13 +34,11 @@ namespace IrrigationApi.Backround
         {
             //tell the board to turn off all the valves, and don't wait for state change
             //then close the pin
-            _gpioController.Write(_config.MasterControlValveGpio, PinValue.High);
-            _gpioController.ClosePin(_config.MasterControlValveGpio);
+            _relayBoard[_config.MasterControlValveGpio].On = false;//turn off the mcv
 
             foreach (var valve in _config.Valves)
             {
-                _gpioController.Write(valve.GpioPin, PinValue.High);
-                _gpioController.ClosePin(valve.GpioPin);
+                _relayBoard[valve.GpioPin].On = false; //and all the valves
             }
 
             return Task.CompletedTask;

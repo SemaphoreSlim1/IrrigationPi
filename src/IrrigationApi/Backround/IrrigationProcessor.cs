@@ -1,4 +1,5 @@
 ﻿using IrrigationApi.ApplicationCore.Configuration;
+using IrrigationApi.ApplicationCore.Hardware;
 using IrrigationApi.ApplicationCore.Threading;
 using IrrigationApi.Model;
 using Microsoft.Extensions.Hosting;
@@ -6,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Device.Gpio;
 using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
@@ -22,7 +22,7 @@ namespace IrrigationApi.Backround
     public class IrrigationProcessor : BackgroundService
     {
         private readonly ChannelReader<IrrigationJob> _jobReader;
-        private readonly GpioController _gpioController;
+        private readonly RelayBoard _relayBoard;
         private readonly IIrrigationStopper _irrigationStopper;
         private readonly IrrigationConfig _config;
         private readonly ILogger _logger;
@@ -31,14 +31,14 @@ namespace IrrigationApi.Backround
         private readonly IrrigationProcessorStatus _status;
 
         public IrrigationProcessor(ChannelReader<IrrigationJob> jobReader,
-                                    GpioController gpioController,
+                                    RelayBoard relayBoard,
                                     IIrrigationStopper irrigationStopper,
                                     IrrigationProcessorStatus status,
                                     IOptions<IrrigationConfig> config,
                                     ILogger<IrrigationProcessor> logger)
         {
             _jobReader = jobReader;
-            _gpioController = gpioController;
+            _relayBoard = relayBoard;
             _irrigationStopper = irrigationStopper;
             _config = config.Value;
             _logger = logger;
@@ -66,7 +66,7 @@ namespace IrrigationApi.Backround
 
                 //turn on the master control valve, then run the job for the desired duration
                 _logger.LogInformation("Turning on MCV");
-                _gpioController.Write(_config.MasterControlValveGpio, PinValue.Low);
+                _relayBoard[_config.MasterControlValveGpio].On = true;
                 _logger.LogInformation("MCV on");
 
                 await Irrigate(job, _irrigationCts.Token);
@@ -91,7 +91,7 @@ namespace IrrigationApi.Backround
                 //to relieve the pressure in the pipes and manifold
 
                 _logger.LogInformation("Turning off MCV");
-                _gpioController.Write(_config.MasterControlValveGpio, PinValue.High);
+                _relayBoard[_config.MasterControlValveGpio].On = false;
                 _logger.LogInformation("MCV off");
 
 
@@ -102,7 +102,7 @@ namespace IrrigationApi.Backround
 
                 foreach (var irrigatedPin in pins)
                 {
-                    _gpioController.Write(irrigatedPin, PinValue.Low);
+                    _relayBoard[irrigatedPin].On = true;
                 }
 
                 //wait a bit for the pressure to bleed out
@@ -111,7 +111,7 @@ namespace IrrigationApi.Backround
                 //then close the valves
                 foreach (var irrigatedPin in pins)
                 {
-                    _gpioController.Write(irrigatedPin, PinValue.High);
+                    _relayBoard[irrigatedPin].On = false;
                 }
 
                 _logger.LogInformation("Pressure bled");
@@ -125,13 +125,13 @@ namespace IrrigationApi.Backround
         {
             var valvePin = _config.Valves.First(v => v.ValveNumber == job.Valve).GpioPin;
 
-            _gpioController.Write(valvePin, PinValue.Low);
+            _relayBoard[valvePin].On = true;
 
             try
             { await Task.Delay(job.Duration, cancellationToken); }
             catch { }
 
-            _gpioController.Write(valvePin, PinValue.High);
+            _relayBoard[valvePin].On = true;
         }
 
         private void StopIrrigation(object sender, EventArgs e)
