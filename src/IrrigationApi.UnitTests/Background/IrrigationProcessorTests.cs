@@ -1,5 +1,6 @@
 ﻿using IrrigationApi.ApplicationCore;
 using IrrigationApi.ApplicationCore.Configuration;
+using IrrigationApi.ApplicationCore.Hardware;
 using IrrigationApi.ApplicationCore.Threading;
 using IrrigationApi.Backround;
 using IrrigationApi.Model;
@@ -9,6 +10,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Device.Gpio;
+using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -54,17 +56,20 @@ namespace IrrigationApi.UnitTests.Background
                 }
             };
 
+            var pins = (_config.Valves.Select(v => v.GpioPin).Union(new[] { _config.MasterControlValveGpio })).ToArray();
+            var relayBoard = new RelayBoard(RelayType.NormallyOpen, gpioController, pins);
+
             var irrigationOptionsMock = new Mock<IOptions<IrrigationConfig>>();
             irrigationOptionsMock.SetupGet(x => x.Value).Returns(_config);
 
             _loggerMock = new Mock<ILogger<IrrigationProcessor>>();
             _status = new IrrigationProcessorStatus();
 
-            _processor = new IrrigationProcessor(_channel.Reader, gpioController, _stopper, _status, irrigationOptionsMock.Object, _loggerMock.Object);
+            _processor = new IrrigationProcessor(_channel.Reader, relayBoard, _stopper, _status, irrigationOptionsMock.Object, _loggerMock.Object);
 
             //before the Microsoft GPIO controller can be used, the pins must be opened and set to the desired input/output state
             //run our initializer code to make that happen
-            var pinInitializer = new PinInitializer(gpioController, irrigationOptionsMock.Object);
+            var pinInitializer = new PinInitializer(relayBoard, irrigationOptionsMock.Object);
             pinInitializer.StartAsync(CancellationToken.None).Wait();
         }
 

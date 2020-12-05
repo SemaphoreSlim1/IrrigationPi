@@ -1,5 +1,6 @@
 using IrrigationApi.ApplicationCore;
 using IrrigationApi.ApplicationCore.Configuration;
+using IrrigationApi.ApplicationCore.Hardware;
 using IrrigationApi.ApplicationCore.Health;
 using IrrigationApi.ApplicationCore.Threading;
 using IrrigationApi.Backround;
@@ -13,9 +14,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System.Device.Gpio;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Channels;
 
 namespace IrrigationApi
@@ -35,7 +38,7 @@ namespace IrrigationApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<IrrigationConfig>(_configRoot.GetSection("Irrigation"));
-            services.Configure<HardwareConfig>(_configRoot.GetSection("HardwareDriver"));
+            services.Configure<HardwareConfig>(_configRoot.GetSection("Hardware"));
 
             var channel = Channel.CreateUnbounded<IrrigationJob>(
                 new UnboundedChannelOptions()
@@ -58,12 +61,22 @@ namespace IrrigationApi
             });
 
             var driverSettings = new HardwareConfig();
-            _configRoot.GetSection("HardwareDriver").Bind(driverSettings);
+            _configRoot.GetSection("Hardware").Bind(driverSettings);
 
             if (driverSettings.UseMemoryDriver)
             { services.AddSingleton(new GpioController(PinNumberingScheme.Logical, new MemoryGpioDriver(pinCount: 50))); }
             else
             { services.AddSingleton(new GpioController()); }
+
+            services.AddSingleton<RelayBoard>(sp =>
+            {
+                var hardwareConfig = sp.GetRequiredService<IOptions<HardwareConfig>>().Value;
+                var irrigationConfig = sp.GetRequiredService<IOptions<IrrigationConfig>>().Value;
+                var controller = sp.GetRequiredService<GpioController>();
+                var pins = (irrigationConfig.Valves.Select(v => v.GpioPin).Union(new[] { irrigationConfig.MasterControlValveGpio })).ToArray();
+
+                return new RelayBoard(hardwareConfig.RelayType, controller, pins);
+            });
 
             services.AddHostedService<PinInitializer>();
             services.AddHostedService<IrrigationProcessor>();

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IrrigationApi.ApplicationCore.Hardware;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -23,5 +24,6 @@ namespace IrrigationApi.ApplicationCore.Configuration
     public class HardwareConfig
     {
         public bool UseMemoryDriver { get; set; }
+        public RelayType RelayType { get; set; }
     }
 }

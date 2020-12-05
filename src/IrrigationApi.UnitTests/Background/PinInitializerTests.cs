@@ -1,5 +1,6 @@
 ﻿using IrrigationApi.ApplicationCore;
 using IrrigationApi.ApplicationCore.Configuration;
+using IrrigationApi.ApplicationCore.Hardware;
 using IrrigationApi.Backround;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -40,7 +41,10 @@ namespace IrrigationApi.UnitTests.Background
 
 
             _gpioController = new GpioController(PinNumberingScheme.Logical, _gpioDriver);
-            _pinInitializer = new PinInitializer(_gpioController, irrigationOptionsMock.Object);
+            var pins = (_config.Valves.Select(v => v.GpioPin).Union(new[] { _config.MasterControlValveGpio })).ToArray();
+            var relayBoard = new RelayBoard(RelayType.NormallyOpen, _gpioController, pins);
+
+            _pinInitializer = new PinInitializer(relayBoard, irrigationOptionsMock.Object);
         }
 
         /// <summary>
@@ -83,27 +87,20 @@ namespace IrrigationApi.UnitTests.Background
             var pinsToClose = new List<int> { _config.MasterControlValveGpio };
             pinsToClose.AddRange(_config.Valves.Select(v => v.GpioPin));
 
-            //we need to have the controller open the pins so that the initizer can close them on stop
-            foreach (var pin in pinsToClose)
-            { _gpioController.OpenPin(pin, PinMode.Output); }
-
             await _pinInitializer.StopAsync(CancellationToken.None);
 
             for (var pin = 0; pin < _gpioDriver.Pins.Count; pin++)
             {
                 //ensure that the desired pins are in their should-be state. Otherwise, they should be untouched.
-                var shouldBeOpen = _gpioDriver.Pins[pin].IsOpen;
                 var shouldBeMode = _gpioDriver.Pins[pin].Mode;
                 var shouldBePinValue = _gpioDriver.Pins[pin].Value;
 
                 if (pinsToClose.Contains(pin))
                 {
-                    shouldBeOpen = false;
                     shouldBeMode = PinMode.Output;
                     shouldBePinValue = PinValue.High;
                 }
 
-                Assert.Equal(shouldBeOpen, _gpioDriver.Pins[pin].IsOpen);
                 Assert.Equal(shouldBeMode, _gpioDriver.Pins[pin].Mode);
                 Assert.Equal(shouldBePinValue, _gpioDriver.Pins[pin].Value);
             }
