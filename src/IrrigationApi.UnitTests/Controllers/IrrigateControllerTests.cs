@@ -1,7 +1,9 @@
-﻿using IrrigationApi.ApplicationCore.Threading;
+﻿using IrrigationApi.ApplicationCore.Configuration;
+using IrrigationApi.ApplicationCore.Threading;
 using IrrigationApi.Controllers;
 using IrrigationApi.Model;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using System.Collections.Generic;
 using System.Threading.Channels;
@@ -22,7 +24,11 @@ namespace IrrigationApi.UnitTests.Controllers
             _stopperMock = new Mock<IIrrigationStopper>();
             var logger = new Mock<ILogger<IrrigateController>>();
 
-            _controller = new IrrigateController(_channel.Writer, _stopperMock.Object, logger.Object);
+            var config = new IrrigationConfig();
+            var optionsMock = new Mock<IOptions<IrrigationConfig>>();
+            optionsMock.SetupGet(x => x.Value).Returns(config);
+
+            _controller = new IrrigateController(_channel.Writer, _stopperMock.Object, logger.Object, optionsMock.Object);
         }
 
         [Fact]
