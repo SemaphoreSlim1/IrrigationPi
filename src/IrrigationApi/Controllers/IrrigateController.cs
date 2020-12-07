@@ -1,8 +1,12 @@
-﻿using IrrigationApi.ApplicationCore.Threading;
+﻿using IrrigationApi.ApplicationCore.Configuration;
+using IrrigationApi.ApplicationCore.Threading;
 using IrrigationApi.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
@@ -15,14 +19,17 @@ namespace IrrigationApi.Controllers
         private readonly ChannelWriter<IrrigationJob> _irrigationJobs;
         private readonly IIrrigationStopper _irrigationStopper;
         private readonly ILogger _logger;
+        private readonly IrrigationConfig _config;
 
         public IrrigateController(ChannelWriter<IrrigationJob> irrigationJobs,
                                     IIrrigationStopper irrigationStopper,
-                                    ILogger<IrrigateController> logger)
+                                    ILogger<IrrigateController> logger,
+                                    IOptions<IrrigationConfig> config)
         {
             _irrigationJobs = irrigationJobs;
             _irrigationStopper = irrigationStopper;
             _logger = logger;
+            _config = config.Value;
         }
 
 
@@ -39,6 +46,31 @@ namespace IrrigationApi.Controllers
                 if (job != null)
                 { await _irrigationJobs.WriteAsync(job); }
             }
+
+            return Accepted();
+        }
+
+        [HttpGet("Configuration")]
+        public IActionResult GetConfiguration()
+        {
+            return Ok(_config);
+        }
+
+        [HttpPost("Test/{valveNumber}")]
+        public async Task<IActionResult> TestValve(int valveNumber)
+        {
+            var valve = _config.Valves.FirstOrDefault(v => v.ValveNumber == valveNumber);
+
+            if (valve == null)
+            { return this.Problem($"Valve number {valveNumber} is not a valid valve number"); }
+
+            var job = new IrrigationJob()
+            {
+                Valve = valveNumber,
+                Duration = TimeSpan.FromMinutes(2)
+            };
+
+            await _irrigationJobs.WriteAsync(job);
 
             return Accepted();
         }
