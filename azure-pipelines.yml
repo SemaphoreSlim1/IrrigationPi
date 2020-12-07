@@ -117,7 +117,7 @@ stages:
 
 - stage: DeployToDockerHub
   displayName: 'Deploy'
-  condition: ne(variables['Build.Reason'], 'PullRequest')
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   dependsOn: Build
   jobs:
   - deployment: DeployToDockerHub
