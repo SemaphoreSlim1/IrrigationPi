@@ -47,7 +47,8 @@ namespace IrrigationApi.UnitTests.Background
             _config = new IrrigationConfig
             {
                 MasterControlValveGpio = 1,
-                PressureBleedTime = TimeSpan.FromSeconds(0),
+                PressureBleedTime = TimeSpan.Zero,
+                ZoneSwitchDelay = TimeSpan.Zero,
                 Valves = new List<PinMapping>
                 {
                     new PinMapping{ GpioPin = 2, ValveNumber = 1},

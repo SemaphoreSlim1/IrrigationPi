@@ -5,7 +5,6 @@ namespace IrrigationApi.ApplicationCore.Hardware
 {
     public class Relay : IDisposable
     {
-        private readonly System.Device.Gpio.PinValue _activeValue;
         private readonly GpioController _gpioController;
         private bool _disposed;
 
