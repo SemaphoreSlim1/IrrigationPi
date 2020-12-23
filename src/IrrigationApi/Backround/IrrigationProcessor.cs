@@ -48,6 +48,10 @@ namespace IrrigationApi.Backround
             _irrigationStopper.StopRequested += StopIrrigation;
         }
 
+        private void StopIrrigation(object sender, EventArgs e)
+        {
+            _irrigationCts.Cancel();
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -55,63 +59,67 @@ namespace IrrigationApi.Backround
 
             while (await _jobReader.WaitToReadAsync(stoppingToken))
             {
+                var executedJobs = new List<IrrigationJob>();
                 _irrigationCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 
-                var executedJobs = new List<IrrigationJob>();
+                var zoneSwitch = false;
 
-                //get the job that triggered this
-                var job = await _jobReader.ReadAsync(_irrigationCts.Token);
-
-                _logger.LogInformation("Incoming job: {@job}", job);
-
-                //turn on the master control valve, then run the job for the desired duration
-                _logger.LogInformation("Turning on MCV");
-                _relayBoard[_config.MasterControlValveGpio].On = true;
-                _logger.LogInformation("MCV on");
-
-                await Irrigate(job, _irrigationCts.Token);
-                executedJobs.Add(job);
-
-                //before turning off the master control valve,
-                //execute any jobs that were queued up while running the triggering job
-
-                while (_jobReader.TryRead(out job))
+                while (_jobReader.TryRead(out var job))
                 {
-                    if (_irrigationCts.IsCancellationRequested)
-                    { continue; } //just no-op this job so we can finish out this run. Cancellation was requested.
+                    if (zoneSwitch)
+                    { await Task.Delay(_config.ZoneSwitchDelay, _irrigationCts.Token); }
 
-                    await Irrigate(job, _irrigationCts.Token);
+                    _logger.LogInformation("Incoming job: {@job}", job);
+
+                    //turn on the master control valve, then run the job for the desired duration
+                    _logger.LogInformation("Turning on MCV");
+                    _relayBoard[_config.MasterControlValveGpio].On = true;
+                    _logger.LogInformation("MCV on");
+
+                    var valvePin = _config.Valves.First(v => v.ValveNumber == job.Valve).GpioPin;
+
+                    _relayBoard[valvePin].On = true;
+
+                    try
+                    { await Task.Delay(job.Duration, _irrigationCts.Token); }
+                    catch { }
+
+                    _relayBoard[valvePin].On = false;
+
+                    _logger.LogInformation("Turning off MCV");
+                    _relayBoard[_config.MasterControlValveGpio].On = false;
+                    _logger.LogInformation("MCV off");
+
                     executedJobs.Add(job);
+
+                    if (stoppingToken.IsCancellationRequested)
+                    {
+                        //stop was requested, drain the queue of remaining jobs
+                        while (_jobReader.TryRead(out job))
+                        { }
+                    }
+                    else { zoneSwitch = true; }
                 }
 
-
-                //now that we've executed all of our irrigation jobs, 
-                //turn off the master control valve
-                //and then turn on our irrigated pins again for a short period of time
-                //to relieve the pressure in the pipes and manifold
-
-                _logger.LogInformation("Turning off MCV");
-                _relayBoard[_config.MasterControlValveGpio].On = false;
-                _logger.LogInformation("MCV off");
-
+                if (executedJobs.Any() == false)
+                { continue; } //no need to bleed pressure if no jobs were executed
 
                 _logger.LogInformation("Bleeding pressure on {@executedJobs}", executedJobs);
-                var pins = executedJobs.Select(j => j.Valve)
-                                       .Select(v => _config.Valves.First(cv => cv.ValveNumber == v).GpioPin)
-                                       .Distinct();
 
-                foreach (var irrigatedPin in pins)
+                //for pressure bleeding, we just want the distinct pins - zones may have been executed multiple times
+                //so open the zone, but don't turn on the mcv. This allows the pressure in the manifold to bleed out
+                var irrigatedPins = executedJobs.Select(j => _config.Valves.First(v => v.ValveNumber == j.Valve).GpioPin).Distinct();
+
+                foreach (var valvePin in irrigatedPins)
                 {
-                    _relayBoard[irrigatedPin].On = true;
-                }
+                    _relayBoard[valvePin].On = true;
 
-                //wait a bit for the pressure to bleed out
-                await Task.Delay(_config.PressureBleedTime);
+                    //wait a bit for the pressure to bleed out
+                    try
+                    { await Task.Delay(_config.PressureBleedTime, stoppingToken); }
+                    catch { }
 
-                //then close the valves
-                foreach (var irrigatedPin in pins)
-                {
-                    _relayBoard[irrigatedPin].On = false;
+                    _relayBoard[valvePin].On = false;
                 }
 
                 _logger.LogInformation("Pressure bled");
@@ -119,24 +127,6 @@ namespace IrrigationApi.Backround
             }
 
             _status.Running = false;
-        }
-
-        private async Task Irrigate(IrrigationJob job, CancellationToken cancellationToken)
-        {
-            var valvePin = _config.Valves.First(v => v.ValveNumber == job.Valve).GpioPin;
-
-            _relayBoard[valvePin].On = true;
-
-            try
-            { await Task.Delay(job.Duration, cancellationToken); }
-            catch { }
-
-            _relayBoard[valvePin].On = true;
-        }
-
-        private void StopIrrigation(object sender, EventArgs e)
-        {
-            _irrigationCts.Cancel();
         }
 
     }

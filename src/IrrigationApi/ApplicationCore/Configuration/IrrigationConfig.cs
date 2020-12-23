@@ -9,6 +9,7 @@ namespace IrrigationApi.ApplicationCore.Configuration
     public class IrrigationConfig
     {
         public TimeSpan PressureBleedTime { get; set; }
+        public TimeSpan ZoneSwitchDelay { get; set; }
         public int MasterControlValveGpio { get; set; }
         public List<PinMapping> Valves { get; set; }
     }
